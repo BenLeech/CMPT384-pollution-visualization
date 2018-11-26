@@ -10,7 +10,126 @@
     <body>
     </body>
     <script type="text/javascript">
+        //Width and height
+        var w = 800;
+        var h = 600;
 
+        // Zooming
+        var attachZoom = d3.zoom().on('zoom', function(d) {
+            d3.select('g').attr('transform', d3.event.transform);
+        });
+
+        //Define map projection
+        var projection = d3.geoMercator()
+            .translate([w / 2, h / 2 + 100])
+            .scale([123]);;
+        // translate the map to center it and scale.
+
+        //Define quantize scale to sort data values into buckets of color
+        var blues = d3.scaleQuantize().range(d3.schemeBlues[9]);
+        var oranges = d3.scaleQuantize().range(d3.schemeOranges[9]);
+
+        //Define path generator
+        var path = d3.geoPath()
+            .projection(projection);
+
+        //Create SVG element
+        var svg = d3.select("body")
+            .append("svg")
+            .attr("width", w)
+            .attr("height", h)
+            // prevent user disorientation
+            .style('border', '2px solid black')
+            .call(attachZoom);
+
+        var svg = svg.append('g');
+
+        //Load in agriculture data
+        d3.csv("pollution_dataset.csv").then(function(data) {
+
+            //Set input domain for color scale
+            // PM 2.5
+            blues.domain([
+                d3.min(data, function(d) {
+                    return +d.pm2dot5;
+                }),
+                d3.max(data, function(d) {
+                    return +d.pm2dot5;
+                })
+            ]);
+            
+            // PM 10
+            oranges.domain([
+                d3.min(data, function(d) {
+                    return d.pm10;
+                }),
+                d3.max(data, function(d) {
+                    return d.pm10;
+                })
+            ]);
+
+            //Load in GeoJSON data
+            d3.json("globe.geo.json").then(function(json) {
+                //Bind data and create one path per GeoJSON feature
+                svg.selectAll("path")
+                    .data(json.features)
+                    .enter()
+                    .append("path")
+                    .attr("d", path)
+                    .style("fill", "grey");
+
+                //Load in cities data
+                d3.csv("worldcities.csv").then(function(city) {
+
+                    // Merge the datasets
+                    // O(n^2)
+                    for (var i = 0; i < data.length; i++) {
+
+                        var dataCity = data[i]["City/Town"];
+                        var dataPM2dot5 = parseInt(data[i].pm2dot5);
+                        var dataPM10 = parseInt(data[i].pm10);
+
+                        //Find the corresponding state inside the worldcities
+                        for (var j = 0; j < city.length; j++) {
+
+                            var worldcitiesCity = city[j].city_ascii;
+
+                            if (dataCity == worldcitiesCity) {
+
+                                //Copy the data value into the JSON
+                                city[j].pm10 = dataPM10;
+                                city[j].pm2dot5 = dataPM2dot5
+
+                                //Stop looking through the JSON
+                                break;
+
+                            }
+                        }
+                    }
+
+                    svg.selectAll("circle")
+                        .data(city.filter(function(d){return d.pm10;}))
+                        .enter()
+                        .append("circle")
+                        .attr("cx", function(d) {
+                            return projection([d.lng, d.lat])[0];
+                        })
+                        .attr("cy", function(d) {
+                            return projection([d.lng, d.lat])[1];
+                        })
+                        .attr("r", 1)
+                        .style("fill", function(d) {
+                            // TODO: Toggle for pm2.5 and pm10
+                            return oranges(d.pm10);
+                        })
+                        .append("svg:title")
+                        .text(function(d) { return d.city; });;
+
+                });
+
+            });
+
+        });
     </script>
 
 </html>
