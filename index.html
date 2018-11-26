@@ -9,8 +9,8 @@
 
     <body>
         <div class="button-container">
-            <button>PM10</button>
-            <button>PM2.5</button>
+            <button id="btn-PM10">PM10</button>
+            <button id="btn-PM2dot5">PM2.5</button>
         </div>
     </body>
     <script type="text/javascript">
@@ -18,11 +18,21 @@
         var w = 800;
         var h = 600;
 
-        var showPM10 = true;
+        var showPM10 = false;
 
         var pollutionData;
         var geoPollutionData;
         var mapPolygons;
+
+        //set up button listeners
+        document.getElementById('btn-PM10').addEventListener('click', function() {
+            showPM10 = true;
+            changePMValue();
+        });
+        document.getElementById('btn-PM2dot5').addEventListener('click', function() {
+            showPM10 = false;
+            changePMValue();
+        });
 
         // Zooming
         var attachZoom = d3.zoom().on('zoom', function(d) {
@@ -155,10 +165,24 @@
                 })
                 .attr("r", 1)
                 .style("fill", function(d) {
-                    return showPM10 ? oranges(d.pm10) : blues(d.pm2dot5);
+                    return showPM10 ? blues(d.pm10) : oranges(d.pm2dot5);
                 })
                 .append("svg:title")
                 .text(function(d) { return d.city; });
+        }
+
+        function changePMValue() {
+            if(!geoPollutionData) {
+                return;
+            }
+
+            svg.selectAll("circle")
+                .data(geoPollutionData.filter(function(d){
+                    return showPM10 ? d.pm10 : d.pm2dot5;
+                }))
+                .style("fill", function(d) {
+                    return showPM10 ? blues(d.pm10) : oranges(d.pm2dot5);
+                });
         }
 
     </script>
