@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<htm>
+<html>
 
     <head>
         <meta charset="utf-8">
@@ -8,11 +8,19 @@
     </head>
 
     <body>
+        <div class="button-container">
+            <button>PM10</button>
+            <button>PM2.5</button>
+        </div>
     </body>
     <script type="text/javascript">
         //Width and height
         var w = 800;
         var h = 600;
+
+        var showPM10 = true;
+        var pollutionData;
+        var mapPolygons;
 
         // Zooming
         var attachZoom = d3.zoom().on('zoom', function(d) {
@@ -22,7 +30,7 @@
         //Define map projection
         var projection = d3.geoMercator()
             .translate([w / 2, h / 2 + 100])
-            .scale([123]);;
+            .scale([123]);
         // translate the map to center it and scale.
 
         //Define quantize scale to sort data values into buckets of color
@@ -44,8 +52,10 @@
 
         var svg = svg.append('g');
 
-        //Load in agriculture data
+        //Load in pollution data
         d3.csv("pollution_dataset.csv").then(function(data) {
+
+            pollutionData = data;
 
             //Set input domain for color scale
             // PM 2.5
@@ -70,66 +80,82 @@
 
             //Load in GeoJSON data
             d3.json("globe.geo.json").then(function(json) {
-                //Bind data and create one path per GeoJSON feature
-                svg.selectAll("path")
-                    .data(json.features)
-                    .enter()
-                    .append("path")
-                    .attr("d", path)
-                    .style("fill", "grey");
+                mapPolygons = json;
+                drawMap();
+                drawPollutionData();
+            });
+        });
 
-                //Load in cities data
-                d3.csv("worldcities.csv").then(function(city) {
+        function drawMap() {
+            if(!mapPolygons) {
+                return;
+            }
 
-                    // Merge the datasets
-                    // O(n^2)
-                    for (var i = 0; i < data.length; i++) {
+            //Bind data and create one path per GeoJSON feature
+            svg.selectAll("path")
+                .data(mapPolygons.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .style("fill", "grey");
+        }
 
-                        var dataCity = data[i]["City/Town"];
-                        var dataPM2dot5 = parseInt(data[i].pm2dot5);
-                        var dataPM10 = parseInt(data[i].pm10);
+        function drawPollutionData() {
+            if(!pollutionData) {
+                return;
+            }
 
-                        //Find the corresponding state inside the worldcities
-                        for (var j = 0; j < city.length; j++) {
+            //Load in cities data
+            d3.csv("worldcities.csv").then(function(city) {
 
-                            var worldcitiesCity = city[j].city_ascii;
+                // Merge the datasets
+                // O(n^2)
+                for (var i = 0; i < pollutionData.length; i++) {
 
-                            if (dataCity == worldcitiesCity) {
+                    var dataCity = pollutionData[i]["City/Town"];
+                    var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
+                    var dataPM10 = parseInt(pollutionData[i].pm10);
 
-                                //Copy the data value into the JSON
-                                city[j].pm10 = dataPM10;
-                                city[j].pm2dot5 = dataPM2dot5
+                    //Find the corresponding state inside the worldcities
+                    for (var j = 0; j < city.length; j++) {
 
-                                //Stop looking through the JSON
-                                break;
+                        var worldcitiesCity = city[j].city_ascii;
 
-                            }
+                        if (dataCity == worldcitiesCity) {
+
+                            //Copy the data value into the JSON
+                            city[j].pm10 = dataPM10;
+                            city[j].pm2dot5 = dataPM2dot5;
+
+                            //Stop looking through the JSON
+                            break;
+
                         }
                     }
+                }
 
-                    svg.selectAll("circle")
-                        .data(city.filter(function(d){return d.pm10;}))
-                        .enter()
-                        .append("circle")
-                        .attr("cx", function(d) {
-                            return projection([d.lng, d.lat])[0];
-                        })
-                        .attr("cy", function(d) {
-                            return projection([d.lng, d.lat])[1];
-                        })
-                        .attr("r", 1)
-                        .style("fill", function(d) {
-                            // TODO: Toggle for pm2.5 and pm10
-                            return oranges(d.pm10);
-                        })
-                        .append("svg:title")
-                        .text(function(d) { return d.city; });;
-
-                });
+                svg.selectAll("circle")
+                    .data(city.filter(function(d){
+                        return showPM10 ? d.pm10 : d.pm2dot5;
+                    }))
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function(d) {
+                        return projection([d.lng, d.lat])[0];
+                    })
+                    .attr("cy", function(d) {
+                        return projection([d.lng, d.lat])[1];
+                    })
+                    .attr("r", 1)
+                    .style("fill", function(d) {
+                        return showPM10 ? oranges(d.pm10) : blues(d.pm2dot5);
+                    })
+                    .append("svg:title")
+                    .text(function(d) { return d.city; });
 
             });
+        }
 
-        });
     </script>
 
 </html>
