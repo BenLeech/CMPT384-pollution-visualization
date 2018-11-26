@@ -19,7 +19,9 @@
         var h = 600;
 
         var showPM10 = true;
+
         var pollutionData;
+        var geoPollutionData;
         var mapPolygons;
 
         // Zooming
@@ -78,11 +80,45 @@
                 })
             ]);
 
+
             //Load in GeoJSON data
             d3.json("globe.geo.json").then(function(json) {
                 mapPolygons = json;
                 drawMap();
-                drawPollutionData();
+
+                //Load in cities data
+                d3.csv("worldcities.csv").then(function(cities) {
+
+                    // Merge the datasets
+                    // O(n^2)
+                    for (var i = 0; i < pollutionData.length; i++) {
+
+                        var dataCity = pollutionData[i]["City/Town"];
+                        var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
+                        var dataPM10 = parseInt(pollutionData[i].pm10);
+
+                        //Find the corresponding state inside the worldcities
+                        for (var j = 0; j < cities.length; j++) {
+
+                            var worldcitiesCity = cities[j].city_ascii;
+
+                            if (dataCity == worldcitiesCity) {
+
+                                //Copy the data value into the JSON
+                                cities[j].pm10 = dataPM10;
+                                cities[j].pm2dot5 = dataPM2dot5;
+
+                                //Stop looking through the JSON
+                                break;
+
+                            }
+                        }
+                    }
+
+                    geoPollutionData = cities;
+                    drawPollutionData();
+                });
+
             });
         });
 
@@ -101,59 +137,28 @@
         }
 
         function drawPollutionData() {
-            if(!pollutionData) {
+            if(!geoPollutionData) {
                 return;
             }
 
-            //Load in cities data
-            d3.csv("worldcities.csv").then(function(city) {
-
-                // Merge the datasets
-                // O(n^2)
-                for (var i = 0; i < pollutionData.length; i++) {
-
-                    var dataCity = pollutionData[i]["City/Town"];
-                    var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
-                    var dataPM10 = parseInt(pollutionData[i].pm10);
-
-                    //Find the corresponding state inside the worldcities
-                    for (var j = 0; j < city.length; j++) {
-
-                        var worldcitiesCity = city[j].city_ascii;
-
-                        if (dataCity == worldcitiesCity) {
-
-                            //Copy the data value into the JSON
-                            city[j].pm10 = dataPM10;
-                            city[j].pm2dot5 = dataPM2dot5;
-
-                            //Stop looking through the JSON
-                            break;
-
-                        }
-                    }
-                }
-
-                svg.selectAll("circle")
-                    .data(city.filter(function(d){
-                        return showPM10 ? d.pm10 : d.pm2dot5;
-                    }))
-                    .enter()
-                    .append("circle")
-                    .attr("cx", function(d) {
-                        return projection([d.lng, d.lat])[0];
-                    })
-                    .attr("cy", function(d) {
-                        return projection([d.lng, d.lat])[1];
-                    })
-                    .attr("r", 1)
-                    .style("fill", function(d) {
-                        return showPM10 ? oranges(d.pm10) : blues(d.pm2dot5);
-                    })
-                    .append("svg:title")
-                    .text(function(d) { return d.city; });
-
-            });
+            svg.selectAll("circle")
+                .data(geoPollutionData.filter(function(d){
+                    return showPM10 ? d.pm10 : d.pm2dot5;
+                }))
+                .enter()
+                .append("circle")
+                .attr("cx", function(d) {
+                    return projection([d.lng, d.lat])[0];
+                })
+                .attr("cy", function(d) {
+                    return projection([d.lng, d.lat])[1];
+                })
+                .attr("r", 1)
+                .style("fill", function(d) {
+                    return showPM10 ? oranges(d.pm10) : blues(d.pm2dot5);
+                })
+                .append("svg:title")
+                .text(function(d) { return d.city; });
         }
 
     </script>
