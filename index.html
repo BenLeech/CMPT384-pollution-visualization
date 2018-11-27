@@ -14,7 +14,16 @@
                 padding: 15px;
                 box-shadow: 0 13px 30px -8px rgba(0,0,0,0.75);
             }
+
+            #loading-spinner {
+                position: absolute;
+                top: 280px;
+                left: 380px;
+                font-size: 50px;
+                color: white;
+            }
         </style>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
     </head>
 
     <body>
@@ -22,6 +31,7 @@
             <button id="btn-PM10">PM10</button>
             <button id="btn-PM2dot5">PM2.5</button>
         </div>
+        <i class="fas fa-spin fa-spinner" id="loading-spinner"></i>
     </body>
     <script type="text/javascript">
         //Width and height
@@ -175,6 +185,8 @@
             if(!geoPollutionData) {
                 return;
             }
+
+            document.getElementById('loading-spinner').style.display = 'none';
 
             svg.selectAll("circle")
                 .data(geoPollutionData
