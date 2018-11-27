@@ -138,16 +138,17 @@
                         // O(n^2)
                         for (var i = 0; i < pollutionData.length; i++) {
 
-                            var dataCity = pollutionData[i]["City/Town"];
+                            var dataCity = pollutionData[i]["City/Town"].toUpperCase();
                             var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
                             var dataPM10 = parseInt(pollutionData[i].pm10);
+                            var indexOfComma = dataCity.indexOf(',');
 
                             //Find the corresponding state inside the worldcities
                             for (var j = 0; j < cities.length; j++) {
 
                                 var worldcitiesCity = cities[j].city_ascii;
 
-                                if (dataCity == worldcitiesCity) {
+                                if (dataCity.substring(0, indexOfComma != -1 ? indexOfComma : dataCity.length) == worldcitiesCity.toUpperCase()) {
 
                                     //Copy the data value into the JSON
                                     cities[j].pm10 = dataPM10;
@@ -158,6 +159,15 @@
                                 }
                             }
                         }
+
+                        console.log(
+                            pollutionData.map(function(d) {
+                                return d["City/Town"].toUpperCase();
+                            }).filter(function(d) {
+                                return cities.map(function(e) {
+                                    return e.city_ascii.toUpperCase();
+                                }).indexOf(d) < 0;
+                            }));
 
                         geoPollutionData = cities;
                         drawPollutionData();
@@ -186,6 +196,9 @@
                 return;
             }
 
+            console.log("circles drawn:" + geoPollutionData.filter(function(d) {
+                return showPM10 ? d.pm10 : d.pm2dot5;
+            }).length);
             document.getElementById('loading-spinner').style.display = 'none';
 
             svg.selectAll("circle")
