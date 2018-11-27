@@ -134,7 +134,6 @@
 
                                     //Stop looking through the JSON
                                     break;
-
                                 }
                             }
                         }
@@ -167,9 +166,13 @@
             }
 
             svg.selectAll("circle")
-                .data(geoPollutionData.filter(function(d){
-                    return showPM10 ? d.pm10 : d.pm2dot5;
-                }))
+                .data(geoPollutionData
+                    .filter(function(d) {
+                        return showPM10 ? d.pm10 : d.pm2dot5;
+                    })
+                    .sort(function(x,y) {
+                        return showPM10 ? d3.descending(x.pm10, y.pm10) : d3.descending(x.pm2dot5, y.pm2dot5)
+                    }))
                 .enter()
                 .append("circle")
                 .attr("cx", function(d) {
@@ -195,9 +198,13 @@
             }
 
             svg.selectAll("circle")
-                .data(geoPollutionData.filter(function(d){
-                    return showPM10 ? d.pm10 : d.pm2dot5;
-                }))
+                .data(geoPollutionData
+                    .filter(function(d){
+                        return showPM10 ? d.pm10 : d.pm2dot5;
+                    })
+                    .sort(function(x,y) {
+                        return showPM10 ? d3.descending(x.pm10, y.pm10) : d3.descending(x.pm2dot5, y.pm2dot5)
+                    }))
                 .attr("r", function (d) {
                     return showPM10 ? radiusScalePM10(d.pm10) : radiusScalePM2dot5(d.pm2dot5);
                 })
