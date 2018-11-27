@@ -24,6 +24,10 @@
         var geoPollutionData;
         var mapPolygons;
 
+        var radiusScalePM10;
+        var radiusScalePM2dot5;
+        var maxValue = 0;
+
         //set up button listeners
         document.getElementById('btn-PM10').addEventListener('click', function() {
             showPM10 = true;
@@ -35,7 +39,7 @@
         });
 
         // Zooming
-        var attachZoom = d3.zoom().on('zoom', function(d) {
+        var attachZoom = d3.zoom().on('zoom', function() {
             d3.select('g').attr('transform', d3.event.transform);
         });
 
@@ -63,74 +67,85 @@
             .call(attachZoom);
 
         var svg = svg.append('g');
+        preProcessData();
 
-        //Load in pollution data
-        d3.csv("pollution_dataset.csv").then(function(data) {
+        function preProcessData() {
+            //Load in pollution data
+            d3.csv("pollution_dataset.csv").then(function(data) {
 
-            pollutionData = data;
+                pollutionData = data;
 
-            //Set input domain for color scale
-            // PM 2.5
-            blues.domain([
-                d3.min(data, function(d) {
-                    return +d.pm2dot5;
-                }),
-                d3.max(data, function(d) {
-                    return +d.pm2dot5;
-                })
-            ]);
-            
-            // PM 10
-            oranges.domain([
-                d3.min(data, function(d) {
-                    return d.pm10;
-                }),
-                d3.max(data, function(d) {
-                    return d.pm10;
-                })
-            ]);
+                //Set input domain for color scale
+                // PM 2.5
+                blues.domain([
+                    d3.min(data, function(d) {
+                        return +d.pm2dot5;
+                    }),
+                    d3.max(data, function(d) {
+                        return +d.pm2dot5;
+                    })
+                ]);
 
+                // PM 10
+                oranges.domain([
+                    d3.min(data, function(d) {
+                        return d.pm10;
+                    }),
+                    d3.max(data, function(d) {
+                        return d.pm10;
+                    })
+                ]);
 
-            //Load in GeoJSON data
-            d3.json("globe.geo.json").then(function(json) {
-                mapPolygons = json;
-                drawMap();
+                radiusScalePM10 = d3.scaleLinear().domain([
+                    d3.min(data, function(d) { return d.pm10; }),
+                    d3.max(data, function(d) { return d.pm10; })
+                ]).range([1.0,10.0]);
+                radiusScalePM2dot5 = d3.scaleLinear().domain([
+                    d3.min(data, function(d) { return d.pm2dot5; }),
+                    d3.max(data, function(d) { return d.pm2dot5; })
+                ]).range([1.0,10.0]);
 
-                //Load in cities data
-                d3.csv("worldcities.csv").then(function(cities) {
+                //Load in GeoJSON data
+                d3.json("globe.geo.json").then(function(json) {
+                    mapPolygons = json;
+                    drawMap();
 
-                    // Merge the datasets
-                    // O(n^2)
-                    for (var i = 0; i < pollutionData.length; i++) {
+                    //Load in cities data
+                    d3.csv("worldcities.csv").then(function(cities) {
 
-                        var dataCity = pollutionData[i]["City/Town"];
-                        var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
-                        var dataPM10 = parseInt(pollutionData[i].pm10);
+                        // Merge the datasets
+                        // O(n^2)
+                        for (var i = 0; i < pollutionData.length; i++) {
 
-                        //Find the corresponding state inside the worldcities
-                        for (var j = 0; j < cities.length; j++) {
+                            var dataCity = pollutionData[i]["City/Town"];
+                            var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
+                            var dataPM10 = parseInt(pollutionData[i].pm10);
 
-                            var worldcitiesCity = cities[j].city_ascii;
+                            //Find the corresponding state inside the worldcities
+                            for (var j = 0; j < cities.length; j++) {
 
-                            if (dataCity == worldcitiesCity) {
+                                var worldcitiesCity = cities[j].city_ascii;
 
-                                //Copy the data value into the JSON
-                                cities[j].pm10 = dataPM10;
-                                cities[j].pm2dot5 = dataPM2dot5;
+                                if (dataCity == worldcitiesCity) {
 
-                                //Stop looking through the JSON
-                                break;
+                                    //Copy the data value into the JSON
+                                    cities[j].pm10 = dataPM10;
+                                    cities[j].pm2dot5 = dataPM2dot5;
 
+                                    //Stop looking through the JSON
+                                    break;
+
+                                }
                             }
                         }
-                    }
 
-                    geoPollutionData = cities;
-                    drawPollutionData();
+                        geoPollutionData = cities;
+                        drawPollutionData();
+                    });
                 });
-
             });
-        });
+        }
+
 
         function drawMap() {
             if(!mapPolygons) {
@@ -163,10 +178,13 @@
                 .attr("cy", function(d) {
                     return projection([d.lng, d.lat])[1];
                 })
-                .attr("r", 1)
+                .attr("r", function (d) {
+                    return showPM10 ? radiusScalePM10(d.pm10) : radiusScalePM2dot5(d.pm2dot5);
+                })
                 .style("fill", function(d) {
                     return showPM10 ? blues(d.pm10) : oranges(d.pm2dot5);
                 })
+                .style("opacity", "0.9")
                 .append("svg:title")
                 .text(function(d) { return d.city; });
         }
@@ -180,6 +198,9 @@
                 .data(geoPollutionData.filter(function(d){
                     return showPM10 ? d.pm10 : d.pm2dot5;
                 }))
+                .attr("r", function (d) {
+                    return showPM10 ? radiusScalePM10(d.pm10) : radiusScalePM2dot5(d.pm2dot5);
+                })
                 .style("fill", function(d) {
                     return showPM10 ? blues(d.pm10) : oranges(d.pm2dot5);
                 });
