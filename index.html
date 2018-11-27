@@ -22,14 +22,24 @@
                 font-size: 50px;
                 color: white;
             }
+
+            #btn-pm10.active {
+                background-color: #79c8ff;
+                font-weight: bold;
+            }
+
+            #btn-pm2dot5.active {
+                background-color: #ffb568;
+                font-weight: bold;
+            }
         </style>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
     </head>
 
     <body>
         <div class="button-container">
-            <button id="btn-PM10">PM10</button>
-            <button id="btn-PM2dot5">PM2.5</button>
+            <button id="btn-pm10">PM10</button>
+            <button id="btn-pm2dot5" class="active">PM2.5</button>
         </div>
         <i class="fas fa-spin fa-spinner" id="loading-spinner"></i>
     </body>
@@ -49,13 +59,15 @@
         var radiusScalePM2dot5;
 
         //set up button listeners
-        document.getElementById('btn-PM10').addEventListener('click', function() {
+        document.getElementById('btn-pm10').addEventListener('click', function(e) {
             showPM10 = true;
             changePMValue();
+            makeButtonActive(e.target);
         });
-        document.getElementById('btn-PM2dot5').addEventListener('click', function() {
+        document.getElementById('btn-pm2dot5').addEventListener('click', function(e) {
             showPM10 = false;
             changePMValue();
+            makeButtonActive(e.target);
         });
 
         // Zooming
@@ -247,6 +259,16 @@
                 .style("fill", function(d) {
                     return showPM10 ? blues(d.pm10) : oranges(d.pm2dot5);
                 });
+        }
+
+        function makeButtonActive(elem) {
+            var activeElements = document.getElementsByClassName('active');
+
+            for(var i=0; i < activeElements.length; i++) {
+                activeElements.item(i).classList.remove('active');
+            }
+            
+            elem.classList.add('active');
         }
 
     </script>
