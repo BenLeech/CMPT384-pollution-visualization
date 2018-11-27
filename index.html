@@ -5,6 +5,16 @@
         <meta charset="utf-8">
         <title>CMPT384 - World Pollution Visualization</title>
         <script type="text/javascript" src="d3.v5.min.js"></script>
+        <style>
+            .button-container {
+                position: absolute;
+                background-color: white;
+                top: 25px;
+                left: 650px;
+                padding: 15px;
+                box-shadow: 0 13px 30px -8px rgba(0,0,0,0.75);
+            }
+        </style>
     </head>
 
     <body>
@@ -22,11 +32,11 @@
 
         var pollutionData;
         var geoPollutionData;
+        var geoPollutionDataCountries;
         var mapPolygons;
 
         var radiusScalePM10;
         var radiusScalePM2dot5;
-        var maxValue = 0;
 
         //set up button listeners
         document.getElementById('btn-PM10').addEventListener('click', function() {
@@ -62,6 +72,7 @@
             .append("svg")
             .attr("width", w)
             .attr("height", h)
+            .style("background-color", '#828282')
             // prevent user disorientation
             .style('border', '2px solid black')
             .call(attachZoom);
@@ -157,7 +168,7 @@
                 .enter()
                 .append("path")
                 .attr("d", path)
-                .style("fill", "grey");
+                .style("fill", "#edecd3");
         }
 
         function drawPollutionData() {
