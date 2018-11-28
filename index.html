@@ -146,10 +146,10 @@
                 // PM 10
                 oranges.domain([
                     d3.min(data, function(d) {
-                        return +d.pm10;
+                        return d.pm10;
                     }),
                     d3.max(data, function(d) {
-                        return +d.pm10;
+                        return d.pm10;
                     })
                 ]);
 
@@ -202,6 +202,8 @@
                                 }
 
                                 if (!found) {
+                                    // No city found, so we use the country instead and 
+                                    // merge it later
                                     for (var l = 0; l < countries.length; l++) {
                                         var countryName = countries[l].Country.toUpperCase();
                                         var countryLon = countries[l].Longitude;
@@ -235,6 +237,7 @@
                                     }).indexOf(d) < 0;
                                 }));
                             
+                            // Merge countries in
                             cities.push(...countries);
                             geoPollutionData = cities;
                             drawPollutionData();
