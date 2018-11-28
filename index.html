@@ -32,6 +32,11 @@
                 background-color: #ffb568;
                 font-weight: bold;
             }
+
+            p {
+                /* Match svg width */
+                width: 800px;
+            }
         </style>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
     </head>
@@ -42,6 +47,25 @@
             <button id="btn-pm2dot5" class="active">PM2.5</button>
         </div>
         <i class="fas fa-spin fa-spinner" id="loading-spinner"></i>
+        <svg></svg>
+        <h3>Team 3 Map Visualization</h3>
+        <p>
+            This visualization displays pollution concentration values gathered by multiple monitoring
+            stations around the globe. 
+        </p>
+        <ul>
+            <li>Globe drawn using an open source GeoJSON file.</li>
+            <li>Pollution Dataset provided by the WHO.</li>
+            <li>World City latitude and longitude values are an open source dataset.</li>
+        </ul>
+        <p>
+            Some challenges we ran into were finding a dataset for the city lat and lon coordinates for
+            all our data points. Many are only commercially available for small towns that we had 
+            data from. We currently are able to draw ~70% of our dataset in their exact location.
+            The other ~30% are accumulated and placed at the centroid of the country of origin. 
+            In a more perfect world, we would have latitude and longitude for every town no matter
+            the size.
+        </p>
     </body>
     <script type="text/javascript">
         //Width and height
@@ -52,7 +76,6 @@
 
         var pollutionData;
         var geoPollutionData;
-        var geoPollutionDataCountries;
         var mapPolygons;
 
         var radiusScalePM10;
@@ -90,8 +113,7 @@
             .projection(projection);
 
         //Create SVG element
-        var svg = d3.select("body")
-            .append("svg")
+        var svg = d3.select("svg")
             .attr("width", w)
             .attr("height", h)
             .style("background-color", '#828282')
@@ -107,6 +129,8 @@
             d3.csv("pollution_dataset.csv").then(function(data) {
 
                 pollutionData = data;
+                var maxPM10 = d3.max(data, function(d) { return +d.pm10; });
+                var maxPM2dot5 = d3.max(data, function(d) { return +d.pm2dot5; });
 
                 //Set input domain for color scale
                 // PM 2.5
@@ -122,20 +146,20 @@
                 // PM 10
                 oranges.domain([
                     d3.min(data, function(d) {
-                        return d.pm10;
+                        return +d.pm10;
                     }),
                     d3.max(data, function(d) {
-                        return d.pm10;
+                        return +d.pm10;
                     })
                 ]);
 
                 radiusScalePM10 = d3.scaleLinear().domain([
-                    d3.min(data, function(d) { return d.pm10; }),
-                    d3.max(data, function(d) { return d.pm10; })
+                    d3.min(data, function(d) { return +d.pm10; }),
+                    maxPM10
                 ]).range([1.0,10.0]);
                 radiusScalePM2dot5 = d3.scaleLinear().domain([
-                    d3.min(data, function(d) { return d.pm2dot5; }),
-                    d3.max(data, function(d) { return d.pm2dot5; })
+                    d3.min(data, function(d) { return +d.pm2dot5; }),
+                    maxPM2dot5
                 ]).range([1.0,10.0]);
 
                 //Load in GeoJSON data
@@ -146,43 +170,75 @@
                     //Load in cities data
                     d3.csv("worldcities.csv").then(function(cities) {
 
-                        // Merge the datasets
-                        // O(n^2)
-                        for (var i = 0; i < pollutionData.length; i++) {
+                        d3.csv("countries.csv").then(function(countriesG) {
+                            countries = countriesG;
 
-                            var dataCity = pollutionData[i]["City/Town"].toUpperCase();
-                            var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
-                            var dataPM10 = parseInt(pollutionData[i].pm10);
-                            var indexOfComma = dataCity.indexOf(',');
+                            // Merge the datasets
+                            // O(n^2)
+                            for (var i = 0; i < pollutionData.length; i++) {
 
-                            //Find the corresponding state inside the worldcities
-                            for (var j = 0; j < cities.length; j++) {
+                                var dataCity = pollutionData[i]["City/Town"].toUpperCase();
+                                var dataCountry = pollutionData[i]["Country"].toUpperCase();
+                                var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
+                                var dataPM10 = parseInt(pollutionData[i].pm10);
+                                var indexOfComma = dataCity.indexOf(',');
+                                var found = false;
 
-                                var worldcitiesCity = cities[j].city_ascii;
+                                //Find the corresponding state inside the worldcities
+                                for (var j = 0; j < cities.length; j++) {
 
-                                if (dataCity.substring(0, indexOfComma != -1 ? indexOfComma : dataCity.length) == worldcitiesCity.toUpperCase()) {
+                                    var worldcitiesCity = cities[j].city_ascii;
 
-                                    //Copy the data value into the JSON
-                                    cities[j].pm10 = dataPM10;
-                                    cities[j].pm2dot5 = dataPM2dot5;
+                                    if (dataCity.substring(0, indexOfComma != -1 ? indexOfComma : dataCity.length) == worldcitiesCity.toUpperCase()) {
 
-                                    //Stop looking through the JSON
-                                    break;
+                                        //Copy the data value into the JSON
+                                        cities[j].pm10 = dataPM10;
+                                        cities[j].pm2dot5 = dataPM2dot5;
+
+                                        //Stop looking through the JSON
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!found) {
+                                    for (var l = 0; l < countries.length; l++) {
+                                        var countryName = countries[l].Country.toUpperCase();
+                                        var countryLon = countries[l].Longitude;
+                                        var countryLat = countries[l].Latitude;
+
+                                        if (countryName == dataCountry) {
+                                            if (countries[l].hasOwnProperty('pm10')) {
+                                                countries[l].pm10 = Math.min(countries[l].pm10+dataPM10, maxPM10);
+                                                countries[l].pm2dot5 = Math.min(countries[l].pm2dot5+dataPM2dot5, maxPM2dot5);
+                                            } else {
+                                                countries[l].pm10 = dataPM10;
+                                                countries[l].pm2dot5 = dataPM2dot5;
+                                                countries[l].lng = countryLon;
+                                                countries[l].lat = countryLat;
+                                                countries[l].city = countries[l].Country;
+                                                countries[l].city_ascii = "";
+                                            }
+
+                                            break;
+                                        }
+                                    }
                                 }
                             }
-                        }
 
-                        console.log(
-                            pollutionData.map(function(d) {
-                                return d["City/Town"].toUpperCase();
-                            }).filter(function(d) {
-                                return cities.map(function(e) {
-                                    return e.city_ascii.toUpperCase();
-                                }).indexOf(d) < 0;
-                            }));
-
-                        geoPollutionData = cities;
-                        drawPollutionData();
+                            console.log(
+                                pollutionData.map(function(d) {
+                                    return d["City/Town"].toUpperCase();
+                                }).filter(function(d) {
+                                    return cities.map(function(e) {
+                                        return e.city_ascii.toUpperCase();
+                                    }).indexOf(d) < 0;
+                                }));
+                            
+                            cities.push(...countries);
+                            geoPollutionData = cities;
+                            drawPollutionData();
+                        });
                     });
                 });
             });
