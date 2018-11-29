@@ -168,7 +168,7 @@
                     drawMap();
 
                     //Load in cities data
-                    d3.csv("worldcities.csv").then(function(cities) {
+                    d3.csv("city_locations.csv").then(function(cities) {
 
                         d3.csv("countries.csv").then(function(countriesG) {
                             countries = countriesG;
@@ -187,7 +187,7 @@
                                 //Find the corresponding state inside the worldcities
                                 for (var j = 0; j < cities.length; j++) {
 
-                                    var worldcitiesCity = cities[j].city_ascii;
+                                    var worldcitiesCity = cities[j]["city"];
 
                                     if (dataCity.substring(0, indexOfComma != -1 ? indexOfComma : dataCity.length) == worldcitiesCity.toUpperCase()) {
 
@@ -233,7 +233,7 @@
                                     return d["City/Town"].toUpperCase();
                                 }).filter(function(d) {
                                     return cities.map(function(e) {
-                                        return e.city_ascii.toUpperCase();
+                                        return e["city"].toUpperCase();
                                     }).indexOf(d) < 0;
                                 }));
                             
