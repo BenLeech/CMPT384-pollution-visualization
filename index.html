@@ -188,8 +188,10 @@
                                 for (var j = 0; j < cities.length; j++) {
 
                                     var worldcitiesCity = cities[j]["city"];
+                                    var worldcitiesCountry = cities[j]["country"];
 
-                                    if (dataCity.substring(0, indexOfComma != -1 ? indexOfComma : dataCity.length) == worldcitiesCity.toUpperCase()) {
+                                    if (dataCity.substring(0, indexOfComma != -1 ? indexOfComma : dataCity.length) == worldcitiesCity.toUpperCase() &&
+                                    dataCountry.toUpperCase() == worldcitiesCountry.toUpperCase()) {
 
                                         //Copy the data value into the JSON
                                         cities[j].pm10 = dataPM10;
