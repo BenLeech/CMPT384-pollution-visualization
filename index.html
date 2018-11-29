@@ -168,7 +168,7 @@
                     drawMap();
 
                     //Load in cities data
-                    d3.csv("city_locations.csv").then(function(cities) {
+                    d3.csv("city-locations-utf8.csv").then(function(cities) {
 
                         d3.csv("countries.csv").then(function(countriesG) {
                             countries = countriesG;
@@ -227,15 +227,6 @@
                                     }
                                 }
                             }
-
-                            console.log(
-                                pollutionData.map(function(d) {
-                                    return d["City/Town"].toUpperCase();
-                                }).filter(function(d) {
-                                    return cities.map(function(e) {
-                                        return e["city"].toUpperCase();
-                                    }).indexOf(d) < 0;
-                                }));
                             
                             // Merge countries in
                             cities.push(...countries);
@@ -270,6 +261,10 @@
             console.log("circles drawn:" + geoPollutionData.filter(function(d) {
                 return showPM10 ? d.pm10 : d.pm2dot5;
             }).length);
+            console.log("circles not drawn: " + geoPollutionData.filter(function(d) {
+                return showPM10 ? !d.pm10 : !d.pm2dot5}).map(function (d) {
+                    return d.city;
+            }));
             document.getElementById('loading-spinner').style.display = 'none';
 
             svg.selectAll("circle")
