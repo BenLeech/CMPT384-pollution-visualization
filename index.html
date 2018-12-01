@@ -37,6 +37,18 @@
                 /* Match svg width */
                 width: 800px;
             }
+
+            div.tooltip {
+                position: absolute;
+                display: inline-block;
+                text-align: center;
+                padding: 3px 5px 5px 5px;
+                font: 12px sans-serif;
+                color: white;
+                background: rgba(0, 0, 0, 0.76);
+                pointer-events:none;
+                border-radius: 5px;
+            }
         </style>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
     </head>
@@ -111,6 +123,11 @@
         //Define path generator
         var path = d3.geoPath()
             .projection(projection);
+
+        //create the tooltip
+        var tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", "0");
 
         //Create SVG element
         var svg = d3.select("svg")
@@ -292,8 +309,14 @@
                     return showPM10 ? blues(d.pm10) : oranges(d.pm2dot5);
                 })
                 .style("opacity", "0.9")
-                .append("svg:title")
-                .text(function(d) { return d.city; });
+                .on('mouseover', function(d) {
+                    tooltip
+                        .html(d.city + "<br/>"  + (showPM10 ? d.pm10 : d.pm2dot5) + "µg")
+                        .style("opacity", "1")
+                        .style("left", (d3.event.pageX + 10) + "px")
+                        .style("top", (d3.event.pageY - 20) + "px");
+                })
+                .on('mouseout', function() { tooltip.style("opacity", "0"); });
         }
 
         function changePMValue() {
