@@ -9,7 +9,7 @@
             .button-container {
                 position: absolute;
                 background-color: white;
-                top: 25px;
+                top: 50px;
                 left: 650px;
                 padding: 15px;
                 box-shadow: 0 13px 30px -8px rgba(0,0,0,0.75);
@@ -17,7 +17,7 @@
 
             #loading-spinner {
                 position: absolute;
-                top: 280px;
+                top: 304px;
                 left: 380px;
                 font-size: 50px;
                 color: white;
@@ -33,11 +33,6 @@
                 font-weight: bold;
             }
 
-            p {
-                /* Match svg width */
-                width: 800px;
-            }
-
             div.tooltip {
                 position: absolute;
                 display: inline-block;
@@ -49,37 +44,27 @@
                 pointer-events:none;
                 border-radius: 5px;
             }
+
+            .title-container {
+                width: 800px;
+                text-align: center;
+                font-size: 24px;
+                font-family: sans-serif;
+            }
         </style>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
     </head>
 
     <body>
+        <div class="title-container">
+            World Pollution Visualization
+        </div>
         <div class="button-container">
             <button id="btn-pm10">PM10</button>
             <button id="btn-pm2dot5" class="active">PM2.5</button>
         </div>
         <i class="fas fa-spin fa-spinner" id="loading-spinner"></i>
         <svg></svg>
-        <h3>Team 3 Map Visualization</h3>
-        <p>
-            This visualization displays pollution concentration values gathered by multiple monitoring
-            stations around the globe. 
-        </p>
-        <ul>
-            <li>Globe drawn using an open source GeoJSON file.</li>
-            <li>Pollution Dataset provided by the WHO.</li>
-            <li>World City latitude and longitude values were collected ourselves by calling WebQuest geocoding API</li>
-        </ul>
-        <p>
-            Some challenges we ran into were finding a dataset for the city lat and lon coordinates for
-            all our data points. The WHO pollution dataset uses several small rural towns that are missing
-            in many of the city location datasets that we found. The pollution dataset is also inconsistent
-            with the naming format of the cities, as a result of collecting the data from many different sources.
-            This made it difficult to match the data between datasets accurately.
-            We ended up creating a java application that reads from our dataset, calls WebQuest's
-            geocoding API, and then writes the world coordinates to a new csv. Any points that could not be
-            geocoded to a location are accumulated and placed at the centroid of the country of origin.
-        </p>
     </body>
     <script type="text/javascript">
         //Width and height
