@@ -86,12 +86,17 @@
         var w = 800;
         var h = 600;
 
+        //true if PM10 values are displayed, false if PM2.5 values are displayed
         var showPM10 = false;
 
+        //source pollution dataset
         var pollutionData;
+        //pollution dataset after it is merged with city coordinates
         var geoPollutionData;
+        //the polygon points of the map landmass
         var mapPolygons;
 
+        //radius scales
         var radiusScalePM10;
         var radiusScalePM2dot5;
 
@@ -143,6 +148,7 @@
         var svg = svg.append('g');
         preProcessData();
 
+        //preProcess all of the data and then renders it
         function preProcessData() {
             //Load in pollution data
             d3.csv("pollution_dataset.csv").then(function(data) {
@@ -184,6 +190,7 @@
                 //Load in GeoJSON data
                 d3.json("globe.geo.json").then(function(json) {
                     mapPolygons = json;
+                    //renders the map before rendering the points
                     drawMap();
 
                     //Load in cities data
@@ -200,7 +207,9 @@
                                 var dataCountry = pollutionData[i]["Country"].toUpperCase();
                                 var dataPM2dot5 = parseInt(pollutionData[i].pm2dot5);
                                 var dataPM10 = parseInt(pollutionData[i].pm10);
+                                //finds the index of the first comma in the city, for later removal
                                 var indexOfComma = dataCity.indexOf(',');
+                                //tracks if pollution city is found within location dataset
                                 var found = false;
 
                                 //Find the corresponding state inside the worldcities
@@ -209,6 +218,7 @@
                                     var worldcitiesCity = cities[j]["city"];
                                     var worldcitiesCountry = cities[j]["country"];
 
+                                    //matches the city between the pollution and location datasets
                                     if (dataCity.substring(0, indexOfComma != -1 ? indexOfComma : dataCity.length) == worldcitiesCity.toUpperCase() &&
                                     dataCountry.toUpperCase() == worldcitiesCountry.toUpperCase()) {
 
@@ -252,6 +262,7 @@
                             // Merge countries in
                             cities.push(...countries);
                             geoPollutionData = cities;
+                            //render the data on the map
                             drawPollutionData();
                         });
                     });
@@ -259,7 +270,7 @@
             });
         }
 
-
+        //draws the map as svg paths
         function drawMap() {
             if(!mapPolygons) {
                 return;
@@ -274,11 +285,13 @@
                 .style("fill", "#c6c8be");
         }
 
+        //renders the pollution data
         function drawPollutionData() {
             if(!geoPollutionData) {
                 return;
             }
 
+            //hide the loading spinner now that data is being loaded
             document.getElementById('loading-spinner').style.display = 'none';
 
             svg.selectAll("circle")
@@ -287,6 +300,7 @@
                         return showPM10 ? d.pm10 : d.pm2dot5;
                     })
                     .sort(function(x,y) {
+                        //sort the data so that smaller values are drawn on top
                         return showPM10 ? d3.descending(x.pm10, y.pm10) : d3.descending(x.pm2dot5, y.pm2dot5)
                     }))
                 .enter()
@@ -305,6 +319,7 @@
                 })
                 .style("opacity", "0.9")
                 .on('mouseover', function(d) {
+                    //set the tooltip text and position
                     tooltip
                         .html(d.city + "<br/>"  + (showPM10 ? d.pm10 : d.pm2dot5) + "µg")
                         .style("opacity", "1")
@@ -314,6 +329,7 @@
                 .on('mouseout', function() { tooltip.style("opacity", "0"); });
         }
 
+        //redraws the data points based on which PM value is selected
         function changePMValue() {
             if(!geoPollutionData) {
                 return;
@@ -335,6 +351,7 @@
                 });
         }
 
+        //changes which PM button is colored
         function makeButtonActive(elem) {
             var activeElements = document.getElementsByClassName('active');
 
